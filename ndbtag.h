@@ -4,6 +4,8 @@
 #include <string>
 #include <vector>
 #include <utility>
+#include <cwctype>
+#include <algorithm>
 
 namespace tmc {
 
@@ -43,6 +45,7 @@ public:
     AxceModYum getAccessModifier();
     void setAccessModifier(AxceModYum am);
     NdbTag* getParent(u64 idx);
+    // add/set functions for parents/children call std::move
     bool addParent(NdbTag* nt);
     bool removeParent(u64 idx);
     bool setParent(u64 idx, NdbTag* nt);
@@ -56,12 +59,17 @@ public:
     u64 getChildCount();
     bool containsChild(std::string tag);
     bool containsChildRecursive(std::string tag);
+    std::vector<std::string> getAliases();
+    bool removeAlias(std::string alias);
+    bool addAlias(std::string alias);
+    static std::string toTagFmt(std::string str);
 
 protected:
     std::string tag;
     AxceModYum am;
     std::vector<NdbTag*> parents;
     std::vector<NdbTag*> children;
+    std::vector<std::string> aliases;
 };
 
 } // namespace tmc
