@@ -2,7 +2,7 @@
 
 namespace tmc {
 
-NdbTag::NdbTag(AxceModYum am, std::string tag, std::vector<NdbTag*> parents, std::vector<std::string> aliases)
+NdbTag::NdbTag(AxceModYum am, std::string tag, std::vector<std::shared_ptr<NdbTag>> parents, std::vector<std::string> aliases)
 {
     this->am = am;
     this->tag = tag;
@@ -79,7 +79,7 @@ void NdbTag::setAccessModifier(AxceModYum am)
     this->am = am;
 }
 
-NdbTag* NdbTag::getParent(u64 idx)
+std::shared_ptr<NdbTag> NdbTag::getParent(u64 idx)
 {
     if (idx >= parents.size()) return nullptr;
     return parents[idx];
@@ -112,27 +112,41 @@ bool NdbTag::containsParentRecursive(std::string tag)
     return result;
 }
 
-bool NdbTag::addParent(NdbTag* nt)
+bool NdbTag::addParent(std::shared_ptr<NdbTag> nt, u64 idx)
 {
-    if (containsParentRecursive(nt->getTagString())) return false;
-    parents.push_back(std::move(nt));
+    if (containsParentRecursive(nt->getTagString()) || (idx > parents.size() && idx != std::numeric_limits<u64>::max())) return false;
+    if (parents.size() == 0) nt->_addChildPriv(std::shared_ptr<NdbTag>(this));
+    else
+    {
+        for (u64 i = 0; i < parents[0]->getChildCount(); i++)
+        {
+            if (*(parents[0]->getChild(i)) == *(this))
+            {
+                nt->_addChildPriv(parents[0]->getChild(i));
+                break;
+            }
+        }
+    }
+    if (idx == std::numeric_limits<u64>::max()) parents.push_back(nt);
+    else parents.insert(parents.begin() + idx, nt);
     return true;
 }
 
 bool NdbTag::removeParent(u64 idx)
 {
     if (idx >= getParentCount()) return false;
+    for (u64 i = 0; i < parents[idx]->getChildCount(); i++)
+    {
+        if (*(parents[idx]->getChild(i)) == *(this)) parents[idx]->_removeChildPriv(i);
+    }
     parents.erase(parents.begin() + idx);
-    parents.shrink_to_fit();
     return true;
 }
 
-bool NdbTag::setParent(u64 idx, NdbTag* nt)
+bool NdbTag::setParent(u64 idx, std::shared_ptr<NdbTag> nt)
 {
-    if (idx >= parents.size() || containsParent(nt->getTagString())) return false;
-    parents.erase(parents.begin() + idx);
-    parents.shrink_to_fit();
-    parents.insert(parents.begin() + idx, std::move(nt));
+    if (!removeParent(idx) || containsParentRecursive(nt->getTagString())) return false;
+    addParent(nt, idx);
     return true;
 }
 
@@ -141,10 +155,101 @@ u64 NdbTag::getChildCount()
     return children.size();
 }
 
-NdbTag* NdbTag::getChild(u64 idx)
+std::shared_ptr<NdbTag> NdbTag::getChild(u64 idx)
 {
     if (idx >= children.size()) return nullptr;
     return children[idx];
+}
+
+bool NdbTag::containsChild(std::string tag)
+{
+    if (children.size() == 0) return false;
+    for (u64 i = 0; i < children.size(); i++)
+    {
+        if (children[i]->getTagString() == tag) return true;
+    }
+    return false;
+}
+
+bool NdbTag::containsChildRecursive(std::string tag)
+{
+    if (children.size() == 0) return false;
+    bool result = false;
+    for (u64 i = 0; i < children.size(); i++)
+    {
+        if (children[i]->getTagString() == tag) result = true;
+        result = result || (children[i]->containsChildRecursive(tag));
+    }
+    return result;
+}
+
+bool NdbTag::_addChildPriv(std::shared_ptr<NdbTag> nt, u64 idx)
+{
+    if (idx > children.size() && idx != std::numeric_limits<u64>::max()) return false;
+    if (idx == std::numeric_limits<u64>::max()) children.push_back(nt);
+    else children.insert(children.begin() + idx, nt);
+    return true;
+}
+
+void NdbTag::_removeChildPriv(u64 idx)
+{
+    children.erase(children.begin() + idx);
+}
+
+bool NdbTag::_addParentPriv(std::shared_ptr<NdbTag> nt, u64 idx)
+{
+    if (idx > parents.size() && idx != std::numeric_limits<u64>::max()) return false;
+    if (idx == std::numeric_limits<u64>::max()) parents.push_back(nt);
+    else parents.insert(parents.begin() + idx, nt);
+    return true;
+}
+
+void NdbTag::_removeParentPriv(u64 idx)
+{
+    parents.erase(parents.begin() + idx);
+}
+
+bool NdbTag::operator==(const NdbTag& rhs)
+{
+    return (this->getTagString() == rhs.getTagString());
+}
+
+bool NdbTag::addChild(std::shared_ptr<NdbTag> nt, u64 idx)
+{
+    if (containsChildRecursive(nt->getTagString()) || (idx > children.size() && idx != std::numeric_limits<u64>::max())) return false;
+    if (children.size() == 0) nt->_addParentPriv(std::shared_ptr<NdbTag>(this));
+    else
+    {
+        for (u64 i = 0; i < children[0]->getParentCount(); i++)
+        {
+            if (*(children[0]->getParent(i)) == *(this))
+            {
+                nt->_addParentPriv(children[0]->getParent(i));
+                break;
+            }
+        }
+    }
+    if (idx == std::numeric_limits<u64>::max()) children.push_back(nt);
+    else children.insert(children.begin() + idx, nt);
+    return true;
+}
+
+bool NdbTag::removeChild(u64 idx)
+{
+    if (idx >= getChildCount()) return false;
+    for (u64 i = 0; i < children[idx]->getParentCount(); i++)
+    {
+        if (*(children[idx]->getParent(i)) == *(this)) children[idx]->_removeParentPriv(i);
+    }
+    children.erase(children.begin() + idx);
+    return true;
+}
+
+bool NdbTag::setChild(u64 idx, std::shared_ptr<NdbTag> nt)
+{
+    if (!removeChild(idx) || containsChildRecursive(nt->getTagString())) return false;
+    addChild(nt, idx);
+    return true;
 }
 
 } // namespace tmc

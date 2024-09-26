@@ -6,6 +6,8 @@
 #include <utility>
 #include <cwctype>
 #include <algorithm>
+#include <memory>
+#include <limits>
 
 namespace tmc {
 
@@ -30,7 +32,7 @@ public:
         RESERVED = 0b10000000
     };
 
-    NdbTag(AxceModYum am, std::string tag, std::vector<NdbTag*> parents = {}, std::vector<std::string> aliases = {});
+    NdbTag(AxceModYum am, std::string tag, std::vector<std::shared_ptr<NdbTag>> parents = {}, std::vector<std::string> aliases = {});
 
     virtual bool isCopyright() = 0;
     virtual bool isAuthor() = 0;
@@ -40,22 +42,21 @@ public:
     virtual bool isMeta() = 0;
     virtual bool isReserved() = 0;
     virtual Category getCategory() = 0;
-    std::string getTagString();
+    std::string getTagString() const;
     void setTagString(std::string tag);
     AxceModYum getAccessModifier();
     void setAccessModifier(AxceModYum am);
-    NdbTag* getParent(u64 idx);
-    // add/set functions for parents/children call std::move
-    bool addParent(NdbTag* nt);
+    std::shared_ptr<NdbTag> getParent(u64 idx);
+    bool addParent(std::shared_ptr<NdbTag> nt, u64 idx = std::numeric_limits<u64>::max());
     bool removeParent(u64 idx);
-    bool setParent(u64 idx, NdbTag* nt);
+    bool setParent(u64 idx, std::shared_ptr<NdbTag> nt);
     u64 getParentCount();
     bool containsParent(std::string tag);
     bool containsParentRecursive(std::string tag);
-    NdbTag* getChild(u64 idx);
-    bool addChild(NdbTag* nt);
+    std::shared_ptr<NdbTag> getChild(u64 idx);
+    bool addChild(std::shared_ptr<NdbTag> nt, u64 idx = std::numeric_limits<u64>::max());
     bool removeChild(u64 idx);
-    bool setChild(u64 idx, NdbTag* nt);
+    bool setChild(u64 idx, std::shared_ptr<NdbTag> nt);
     u64 getChildCount();
     bool containsChild(std::string tag);
     bool containsChildRecursive(std::string tag);
@@ -63,12 +64,17 @@ public:
     bool removeAlias(std::string alias);
     bool addAlias(std::string alias);
     static std::string toTagFmt(std::string str);
+    bool operator==(const NdbTag& rhs);
 
 protected:
     std::string tag;
     AxceModYum am;
-    std::vector<NdbTag*> parents;
-    std::vector<NdbTag*> children;
+    bool _addChildPriv(std::shared_ptr<NdbTag> nt, u64 idx = std::numeric_limits<u64>::max());
+    void _removeChildPriv(u64 idx);
+    bool _addParentPriv(std::shared_ptr<NdbTag> nt, u64 idx = std::numeric_limits<u64>::max());
+    void _removeParentPriv(u64 idx);
+    std::vector<std::shared_ptr<NdbTag>> parents;
+    std::vector<std::shared_ptr<NdbTag>> children;
     std::vector<std::string> aliases;
 };
 
