@@ -1,6 +1,6 @@
 #include "ndbtag.h"
 
-namespace tmc {
+namespace tmc::Bidoof {
 
 NdbTag::NdbTag(AxceModYum am, std::string tag, std::vector<std::shared_ptr<NdbTag>> parents, std::vector<std::string> aliases)
 {

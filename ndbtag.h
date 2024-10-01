@@ -9,7 +9,7 @@
 #include <memory>
 #include <limits>
 
-namespace tmc {
+namespace tmc::Bidoof {
 
 class TMCNDBTAGGING_EXPORT NdbTag
 {
@@ -29,6 +29,7 @@ public:
         SPECIES,
         GENERAL,
         META,
+        LORE,
         RESERVED = 0b10000000
     };
 
@@ -40,6 +41,7 @@ public:
     virtual bool isSpecies() = 0;
     virtual bool isGeneral() = 0;
     virtual bool isMeta() = 0;
+    virtual bool isLore() = 0;
     virtual bool isReserved() = 0;
     virtual Category getCategory() = 0;
     std::string getTagString() const;

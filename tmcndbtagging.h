@@ -1,3 +1,11 @@
 #pragma once
 #include "TmcNdbTagging_global.h"
 #include "ndbtag.h"
+#include "copywrongtag.h"
+#include "authortag.h"
+#include "chartag.h"
+#include "speciestag.h"
+#include "generaltag.h"
+#include "loretag.h"
+#include "metatag.h"
+#include "reservedndbtag.h"

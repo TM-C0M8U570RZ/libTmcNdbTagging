@@ -11,6 +11,15 @@ add_library(TmcNdbTagging SHARED
   tmcndbtagging.h
   ndbtag.h ndbtag.cpp
   $ENV{TMC_SDK_PATH}/current/helpers/include/tmc_global_types.h
+  copywrongtag.h copywrongtag.cpp
+  authortag.h authortag.cpp
+  chartag.h chartag.cpp
+  speciestag.h speciestag.cpp
+  generaltag.h generaltag.cpp
+  metatag.h metatag.cpp
+  loretag.h loretag.cpp
+  reservedndbtag.h reservedndbtag.cpp
+  ndbtagweb.h ndbtagweb.cpp
 )
 target_include_directories(TmcNdbTagging PRIVATE $ENV{TMC_SDK_PATH}/current/helpers/include)
 
