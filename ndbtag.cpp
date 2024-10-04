@@ -59,7 +59,7 @@ std::vector<std::string> NdbTag::getAliases()
     return aliases;
 }
 
-std::string NdbTag::getTagString()
+std::string NdbTag::getTagString() const
 {
     return tag;
 }
@@ -95,7 +95,7 @@ bool NdbTag::containsParent(std::string tag)
     if (getParentCount() == 0) return false;
     for (u64 i = 0; i < parents.size(); i++)
     {
-        if (parents[i]->getTagString() == tag) return true;
+        if (parents[i]->getTagString() == tag || parents[i]->containsAlias(tag)) return true;
     }
     return false;
 }
@@ -106,7 +106,7 @@ bool NdbTag::containsParentRecursive(std::string tag)
     bool result = false;
     for (u64 i = 0; i < parents.size(); i++)
     {
-        if (parents[i]->getTagString() == tag) result = true;
+        if (parents[i]->getTagString() == tag || parents[i]->containsAlias(tag)) result = true;
         result = result || (parents[i]->containsParentRecursive(tag));
     }
     return result;
@@ -166,7 +166,7 @@ bool NdbTag::containsChild(std::string tag)
     if (children.size() == 0) return false;
     for (u64 i = 0; i < children.size(); i++)
     {
-        if (children[i]->getTagString() == tag) return true;
+        if (children[i]->getTagString() == tag || children[i]->containsAlias(tag)) return true;
     }
     return false;
 }
@@ -177,7 +177,7 @@ bool NdbTag::containsChildRecursive(std::string tag)
     bool result = false;
     for (u64 i = 0; i < children.size(); i++)
     {
-        if (children[i]->getTagString() == tag) result = true;
+        if (children[i]->getTagString() == tag || children[i]->containsAlias(tag)) result = true;
         result = result || (children[i]->containsChildRecursive(tag));
     }
     return result;
@@ -250,6 +250,15 @@ bool NdbTag::setChild(u64 idx, std::shared_ptr<NdbTag> nt)
     if (!removeChild(idx) || containsChildRecursive(nt->getTagString())) return false;
     addChild(nt, idx);
     return true;
+}
+
+bool NdbTag::containsAlias(std::string alias) const
+{
+    for (u64 i = 0; i < aliases.size(); i++)
+    {
+        if (alias == aliases[i]) return true;
+    }
+    return false;
 }
 
 } // namespace tmc

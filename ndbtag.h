@@ -65,6 +65,7 @@ public:
     std::vector<std::string> getAliases();
     bool removeAlias(std::string alias);
     bool addAlias(std::string alias);
+    bool containsAlias(std::string alias) const;
     static std::string toTagFmt(std::string str);
     bool operator==(const NdbTag& rhs);
 

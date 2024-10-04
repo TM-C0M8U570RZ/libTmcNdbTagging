@@ -1,6 +1,7 @@
 #pragma once
 #include "TmcNdbTagging_global.h"
 #include "ndbtag.h"
+#include <fstream>
 
 namespace tmc {
 namespace Bidoof {
@@ -24,6 +25,7 @@ public:
 private:
     std::vector<std::shared_ptr<NdbTag>> topLevel;
     std::string filename;
+    u64 byteVecToU64(std::vector<char> bVec);
 };
 
 } // namespace Bidoof
