@@ -9,3 +9,4 @@
 #include "loretag.h"
 #include "metatag.h"
 #include "reservedndbtag.h"
+#include "ndbtagweb.h"
