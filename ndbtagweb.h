@@ -22,6 +22,7 @@ class TMCNDBTAGGING_EXPORT NdbTagWeb
 public:
     NdbTagWeb(std::vector<std::shared_ptr<NdbTag>> topLevel = {});
     NdbTagWeb(std::string filename);
+    NdbTagWeb(std::vector<char> buf);
     std::string getFilename();
     std::shared_ptr<NdbTag>& operator[](u64 idx);
     u64 getTopLevelTagCount();
@@ -35,6 +36,7 @@ public:
     std::set<std::string> findFromWildcard(std::string wildcard);
     void setFilename(std::string filename);
     void writeOut();
+    std::vector<char> getBuf();
 
 private:
     std::vector<std::shared_ptr<NdbTag>> topLevel;

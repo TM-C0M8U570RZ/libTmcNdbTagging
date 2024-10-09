@@ -24,7 +24,6 @@ NdbTagWeb::NdbTagWeb(std::string filename)
         for (u64 i = 0; i < topLevelCount; i++)
         {
             in.read(temp.data(), 8);
-            u64 entryLength = byteVecToU64(temp);
             std::string tagStr = "";
             u64 counter = 0;
             while(in.peek() != 0) tagStr += in.get();
@@ -97,7 +96,6 @@ NdbTagWeb::NdbTagWeb(std::string filename)
         while (in.peek() != std::ifstream::traits_type::eof())
         {
             in.read(temp.data(), 8);
-            u64 entryLength = byteVecToU64(temp);
             std::string tagStr = "";
             u64 counter = 0;
             while(in.peek() != 0) tagStr += in.get();
@@ -188,6 +186,193 @@ NdbTagWeb::NdbTagWeb(std::string filename)
         in.close();
         topLevel = connectHierarchy(topLevel, subTags, lossChunks);
     }
+}
+
+NdbTagWeb::NdbTagWeb(std::vector<char> buf)
+{
+    this->filename = "";
+    alreadyFound = false;
+    std::vector<char> temp;
+    for (u8 i = 8; i < 16; i++)
+    {
+        temp.push_back(buf[i]);
+    }
+    u64 topLevelCount = byteVecToU64(temp);
+    u64 offset = 24;
+    std::vector<std::pair<std::string, std::vector<std::string>>> lossChunks;
+    while (topLevel.size() < topLevelCount)
+    {
+        std::string tagStr;
+        while (buf[offset] != '\0')
+        {
+            tagStr += buf[offset];
+            offset++;
+        }
+        offset++;
+        std::pair<std::string, std::vector<std::string>> knuts;
+        knuts.first = tagStr;
+        knuts.second = std::vector<std::string>();
+        while (offset % 8 != 0)
+        {
+            offset++;
+        }
+        NdbTag::AxceModYum am = static_cast<NdbTag::AxceModYum>(buf[offset]);
+        offset++;
+        NdbTag::Category cat = static_cast<NdbTag::Category>(buf[offset]);
+        offset+= 7;
+        u64 oofset = offset + 8;
+        for (u64 i = offset; i < oofset; i++)
+        {
+            temp[i - offset] = buf[offset];
+        }
+        offset += 8;
+        u64 aliasCount = byteVecToU64(temp);
+        std::vector<std::string> aliases;
+        while (aliases.size() < aliasCount)
+        {
+            std::string alias;
+            while (buf[offset] != '\0')
+            {
+                alias += buf[offset];
+                offset++;
+            }
+            offset++;
+            aliases.push_back(alias);
+        }
+        while (offset % 8 != 0)
+        {
+            offset++;
+        }
+        oofset = offset + 8;
+        for (u64 i = offset; i < oofset; i++)
+        {
+            temp[i - offset] = buf[offset];
+        }
+        u64 childCount = byteVecToU64(temp);
+        while (knuts.second.size() < childCount)
+        {
+            std::string child;
+            while (buf[offset] != '\0')
+            {
+                child += buf[offset];
+                offset++;
+            }
+            offset++;
+            knuts.second.push_back(child);
+        }
+        lossChunks.push_back(knuts);
+        while (offset % 8 != 0)
+        {
+            offset++;
+        }
+        if (cat == NdbTag::COPYRIGHT) topLevel.push_back(std::make_shared<CopywrongTag>(am, tagStr, std::vector<std::shared_ptr<NdbTag>>(), aliases));
+        else if (cat == NdbTag::AUTHOR) topLevel.push_back(std::make_shared<AuthorTag>(am, tagStr, std::vector<std::shared_ptr<NdbTag>>(), aliases));
+        else if (cat == NdbTag::CHARACTER) topLevel.push_back(std::make_shared<CharTag>(am, tagStr, std::vector<std::shared_ptr<NdbTag>>(), aliases));
+        else if (cat == NdbTag::SPECIES) topLevel.push_back(std::make_shared<SpeciesTag>(am, tagStr, std::vector<std::shared_ptr<NdbTag>>(), aliases));
+        else if (cat == NdbTag::GENERAL) topLevel.push_back(std::make_shared<GeneralTag>(am, tagStr, std::vector<std::shared_ptr<NdbTag>>(), aliases));
+        else if (cat == NdbTag::META) topLevel.push_back(std::make_shared<MetaTag>(am, tagStr, std::vector<std::shared_ptr<NdbTag>>(), aliases));
+        else if (cat == NdbTag::LORE) topLevel.push_back(std::make_shared<LoreTag>(am, tagStr, std::vector<std::shared_ptr<NdbTag>>(), aliases));
+        else if (cat == static_cast<NdbTag::Category>(NdbTag::META | NdbTag::RESERVED)) topLevel.push_back(std::make_shared<ReservedNdbTag>(am, tagStr, std::vector<std::shared_ptr<NdbTag>>(), aliases));
+    }
+    std::vector<std::shared_ptr<NdbTag>> subTags;
+    while(offset < buf.size())
+    {
+        std::string tagStr;
+        while (buf[offset] != '\0')
+        {
+            tagStr += buf[offset];
+            offset++;
+        }
+        offset++;
+        std::pair<std::string, std::vector<std::string>> knuts;
+        knuts.first = tagStr;
+        knuts.second = std::vector<std::string>();
+        while (offset % 8 != 0)
+        {
+            offset++;
+        }
+        NdbTag::AxceModYum am = static_cast<NdbTag::AxceModYum>(buf[offset]);
+        offset++;
+        NdbTag::Category cat = static_cast<NdbTag::Category>(buf[offset]);
+        offset+= 7;
+        u64 oofset = offset + 8;
+        for (u64 i = offset; i < oofset; i++)
+        {
+            temp[i - offset] = buf[offset];
+        }
+        offset += 8;
+        u64 parentCount = byteVecToU64(temp);
+        std::vector<std::string> parents;
+        while (parents.size() < parentCount)
+        {
+            std::string parent;
+            while (buf[offset] != '\0')
+            {
+                parent += buf[offset];
+                offset++;
+            }
+            offset++;
+            parents.push_back(parent);
+        }
+        while (offset % 8 != 0)
+        {
+            offset++;
+        }
+        oofset = offset + 8;
+        for (u64 i = offset; i < oofset; i++)
+        {
+            temp[i - offset] = buf[offset];
+        }
+        offset += 8;
+        u64 aliasCount = byteVecToU64(temp);
+        std::vector<std::string> aliases;
+        while (aliases.size() < aliasCount)
+        {
+            std::string alias;
+            while (buf[offset] != '\0')
+            {
+                alias += buf[offset];
+                offset++;
+            }
+            offset++;
+            aliases.push_back(alias);
+        }
+        while (offset % 8 != 0)
+        {
+            offset++;
+        }
+        oofset = offset + 8;
+        for (u64 i = offset; i < oofset; i++)
+        {
+            temp[i - offset] = buf[offset];
+        }
+        u64 childCount = byteVecToU64(temp);
+        while (knuts.second.size() < childCount)
+        {
+            std::string child;
+            while (buf[offset] != '\0')
+            {
+                child += buf[offset];
+                offset++;
+            }
+            offset++;
+            knuts.second.push_back(child);
+        }
+        lossChunks.push_back(knuts);
+        while (offset % 8 != 0)
+        {
+            offset++;
+        }
+        if (cat == NdbTag::COPYRIGHT) subTags.push_back(std::make_shared<CopywrongTag>(am, tagStr, std::vector<std::shared_ptr<NdbTag>>(), aliases));
+        else if (cat == NdbTag::AUTHOR) subTags.push_back(std::make_shared<AuthorTag>(am, tagStr, std::vector<std::shared_ptr<NdbTag>>(), aliases));
+        else if (cat == NdbTag::CHARACTER) subTags.push_back(std::make_shared<CharTag>(am, tagStr, std::vector<std::shared_ptr<NdbTag>>(), aliases));
+        else if (cat == NdbTag::SPECIES) subTags.push_back(std::make_shared<SpeciesTag>(am, tagStr, std::vector<std::shared_ptr<NdbTag>>(), aliases));
+        else if (cat == NdbTag::GENERAL) subTags.push_back(std::make_shared<GeneralTag>(am, tagStr, std::vector<std::shared_ptr<NdbTag>>(), aliases));
+        else if (cat == NdbTag::META) subTags.push_back(std::make_shared<MetaTag>(am, tagStr, std::vector<std::shared_ptr<NdbTag>>(), aliases));
+        else if (cat == NdbTag::LORE) subTags.push_back(std::make_shared<LoreTag>(am, tagStr, std::vector<std::shared_ptr<NdbTag>>(), aliases));
+        else if (cat == static_cast<NdbTag::Category>(NdbTag::META | NdbTag::RESERVED)) subTags.push_back(std::make_shared<ReservedNdbTag>(am, tagStr, std::vector<std::shared_ptr<NdbTag>>(), aliases));
+    }
+    topLevel = connectHierarchy(topLevel, subTags, lossChunks);
 }
 
 std::vector<std::shared_ptr<NdbTag>> NdbTagWeb::connectHierarchy(std::vector<std::shared_ptr<NdbTag>> topLevel, std::vector<std::shared_ptr<NdbTag>> subTags, std::vector<std::pair<std::string, std::vector<std::string>>> lossChunks)
@@ -357,6 +542,38 @@ void NdbTagWeb::writeOut()
     std::ofstream out(filename, std::ios::binary);
     out.write(buf.data(), buf.size());
     out.close();
+}
+
+std::vector<char> NdbTagWeb::getBuf()
+{
+    std::vector<char> buf;
+    buf = pushMagic(buf, 1, 0, 0);
+    buf = pushU64(buf, static_cast<u64>(topLevel.size()));
+    std::vector<std::shared_ptr<NdbTag>> subTags;
+    for (u64 i = 0; i < topLevel.size(); i++)
+    {
+        std::vector<char> temp;
+        temp = pushString(temp, topLevel[i]->getTagString());
+        temp = pushMeta(temp, topLevel[i]->getAccessModifier(), topLevel[i]->getCategory());
+        temp = pushU64(temp, static_cast<u64>(topLevel[i]->getAliases().size()));
+        temp = pushStringArray(temp, topLevel[i]->getAliases());
+        temp = pushU64(temp, topLevel[i]->getChildCount());
+        std::vector<std::string> children;
+        for (u64 j = 0; j < topLevel[i]->getChildCount(); j++)
+        {
+            children.push_back(topLevel[i]->getChild(j)->getTagString());
+            subTags.push_back(topLevel[i]->getChild(j));
+        }
+        temp = pushStringArray(temp, children);
+        buf = pushU64(buf, static_cast<u64>(temp.size()));
+        for (u64 j = 0; j < temp.size(); j++)
+        {
+            buf.push_back(temp[j]);
+        }
+    }
+    buf = pushHierarchy(buf, subTags);
+    alreadyPushed.erase(alreadyPushed.begin(), alreadyPushed.end());
+    return buf;
 }
 
 std::multimap<std::string, bool> NdbTagWeb::globuleToSearchCriteria(std::string globule)
