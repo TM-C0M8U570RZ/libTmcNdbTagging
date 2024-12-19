@@ -8,6 +8,7 @@ NdbTag::NdbTag(AxceModYum am, std::string tag, std::vector<std::shared_ptr<NdbTa
     this->tag = tag;
     this->parents = parents;
     this->aliases = aliases;
+    failVal = nullptr;
 }
 
 std::string NdbTag::toTagFmt(std::string str)
@@ -79,9 +80,9 @@ void NdbTag::setAccessModifier(AxceModYum am)
     this->am = am;
 }
 
-std::shared_ptr<NdbTag> NdbTag::getParent(u64 idx)
+std::shared_ptr<NdbTag>& NdbTag::getParent(u64 idx)
 {
-    if (idx >= parents.size()) return nullptr;
+    if (idx >= parents.size()) return failVal;
     return parents[idx];
 }
 
@@ -115,7 +116,7 @@ bool NdbTag::containsParentRecursive(std::string tag)
 bool NdbTag::addParent(std::shared_ptr<NdbTag> nt, u64 idx)
 {
     if (containsParentRecursive(nt->getTagString()) || (idx > parents.size() && idx != std::numeric_limits<u64>::max())) return false;
-    if (parents.size() == 0) nt->_addChildPriv(std::shared_ptr<NdbTag>(this));
+    if (parents.size() == 0) nt->_addChildPriv(shared_from_this());
     else
     {
         for (u64 i = 0; i < parents[0]->getChildCount(); i++)
@@ -155,9 +156,9 @@ u64 NdbTag::getChildCount()
     return children.size();
 }
 
-std::shared_ptr<NdbTag> NdbTag::getChild(u64 idx)
+std::shared_ptr<NdbTag>& NdbTag::getChild(u64 idx)
 {
-    if (idx >= children.size()) return nullptr;
+    if (idx >= children.size()) return failVal;
     return children[idx];
 }
 
@@ -217,7 +218,7 @@ bool NdbTag::operator==(const NdbTag& rhs)
 bool NdbTag::addChild(std::shared_ptr<NdbTag> nt, u64 idx)
 {
     if (containsChildRecursive(nt->getTagString()) || (idx > children.size() && idx != std::numeric_limits<u64>::max())) return false;
-    if (children.size() == 0) nt->_addParentPriv(std::shared_ptr<NdbTag>(this));
+    if (children.size() == 0) nt->_addParentPriv(shared_from_this());
     else
     {
         for (u64 i = 0; i < children[0]->getParentCount(); i++)

@@ -1,9 +1,11 @@
 #include "ndbtagweb.h"
+#include <iostream>
 
 namespace tmc {
 namespace Bidoof {
 
 NdbTagWeb::NdbTagWeb(std::vector<std::shared_ptr<NdbTag>> topLevel) {
+    found = nullptr;
     this->topLevel = topLevel;
     this->filename = "";
     alreadyFound = false;
@@ -11,6 +13,7 @@ NdbTagWeb::NdbTagWeb(std::vector<std::shared_ptr<NdbTag>> topLevel) {
 
 NdbTagWeb::NdbTagWeb(std::string filename)
 {
+    found = nullptr;
     this->filename = filename;
     alreadyFound = false;
     std::ifstream in(filename, std::ios::binary);
@@ -169,27 +172,36 @@ NdbTagWeb::NdbTagWeb(std::string filename)
                 in.seekg(1 + in.tellg());
                 counter++;
             }
+            lossChunks.push_back(knuts);
             while (counter % 8 != 0)
             {
                 counter++;
                 in.seekg(1 + in.tellg());
             }
-            if (cat == NdbTag::COPYRIGHT) subTags.push_back(std::make_shared<CopywrongTag>(am, tagStr, std::vector<std::shared_ptr<NdbTag>>(), aliases));
-            else if (cat == NdbTag::AUTHOR) subTags.push_back(std::make_shared<AuthorTag>(am, tagStr, std::vector<std::shared_ptr<NdbTag>>(), aliases));
-            else if (cat == NdbTag::CHARACTER) subTags.push_back(std::make_shared<CharTag>(am, tagStr, std::vector<std::shared_ptr<NdbTag>>(), aliases));
-            else if (cat == NdbTag::SPECIES) subTags.push_back(std::make_shared<SpeciesTag>(am, tagStr, std::vector<std::shared_ptr<NdbTag>>(), aliases));
-            else if (cat == NdbTag::GENERAL) subTags.push_back(std::make_shared<GeneralTag>(am, tagStr, std::vector<std::shared_ptr<NdbTag>>(), aliases));
-            else if (cat == NdbTag::META) subTags.push_back(std::make_shared<MetaTag>(am, tagStr, std::vector<std::shared_ptr<NdbTag>>(), aliases));
-            else if (cat == NdbTag::LORE) subTags.push_back(std::make_shared<LoreTag>(am, tagStr, std::vector<std::shared_ptr<NdbTag>>(), aliases));
-            else if (cat == static_cast<NdbTag::Category>(NdbTag::META | NdbTag::RESERVED)) subTags.push_back(std::make_shared<ReservedNdbTag>(am, tagStr, std::vector<std::shared_ptr<NdbTag>>(), aliases));
+            if (cat == NdbTag::COPYRIGHT) topLevel.push_back(std::make_shared<CopywrongTag>(am, tagStr, std::vector<std::shared_ptr<NdbTag>>(), aliases));
+            else if (cat == NdbTag::AUTHOR) topLevel.push_back(std::make_shared<AuthorTag>(am, tagStr, std::vector<std::shared_ptr<NdbTag>>(), aliases));
+            else if (cat == NdbTag::CHARACTER) topLevel.push_back(std::make_shared<CharTag>(am, tagStr, std::vector<std::shared_ptr<NdbTag>>(), aliases));
+            else if (cat == NdbTag::SPECIES) topLevel.push_back(std::make_shared<SpeciesTag>(am, tagStr, std::vector<std::shared_ptr<NdbTag>>(), aliases));
+            else if (cat == NdbTag::GENERAL) topLevel.push_back(std::make_shared<GeneralTag>(am, tagStr, std::vector<std::shared_ptr<NdbTag>>(), aliases));
+            else if (cat == NdbTag::META) topLevel.push_back(std::make_shared<MetaTag>(am, tagStr, std::vector<std::shared_ptr<NdbTag>>(), aliases));
+            else if (cat == NdbTag::LORE) topLevel.push_back(std::make_shared<LoreTag>(am, tagStr, std::vector<std::shared_ptr<NdbTag>>(), aliases));
+            else if (cat == static_cast<NdbTag::Category>(NdbTag::META | NdbTag::RESERVED)) topLevel.push_back(std::make_shared<ReservedNdbTag>(am, tagStr, std::vector<std::shared_ptr<NdbTag>>(), aliases));
         }
         in.close();
-        topLevel = connectHierarchy(topLevel, subTags, lossChunks);
+        for (u64 i = 0; i < lossChunks.size(); i++)
+        {
+            for (u64 j = 0; j < lossChunks[i].second.size(); j++)
+            {
+                operator[](lossChunks[i].first)->addChild(operator[](lossChunks[i].second[j]));
+            }
+        }
+//        topLevel = connectHierarchy(topLevel, subTags, lossChunks);
     }
 }
 
 NdbTagWeb::NdbTagWeb(std::vector<char> buf)
 {
+    found = nullptr;
     this->filename = "";
     alreadyFound = false;
     std::vector<char> temp;
@@ -363,16 +375,23 @@ NdbTagWeb::NdbTagWeb(std::vector<char> buf)
         {
             offset++;
         }
-        if (cat == NdbTag::COPYRIGHT) subTags.push_back(std::make_shared<CopywrongTag>(am, tagStr, std::vector<std::shared_ptr<NdbTag>>(), aliases));
-        else if (cat == NdbTag::AUTHOR) subTags.push_back(std::make_shared<AuthorTag>(am, tagStr, std::vector<std::shared_ptr<NdbTag>>(), aliases));
-        else if (cat == NdbTag::CHARACTER) subTags.push_back(std::make_shared<CharTag>(am, tagStr, std::vector<std::shared_ptr<NdbTag>>(), aliases));
-        else if (cat == NdbTag::SPECIES) subTags.push_back(std::make_shared<SpeciesTag>(am, tagStr, std::vector<std::shared_ptr<NdbTag>>(), aliases));
-        else if (cat == NdbTag::GENERAL) subTags.push_back(std::make_shared<GeneralTag>(am, tagStr, std::vector<std::shared_ptr<NdbTag>>(), aliases));
-        else if (cat == NdbTag::META) subTags.push_back(std::make_shared<MetaTag>(am, tagStr, std::vector<std::shared_ptr<NdbTag>>(), aliases));
-        else if (cat == NdbTag::LORE) subTags.push_back(std::make_shared<LoreTag>(am, tagStr, std::vector<std::shared_ptr<NdbTag>>(), aliases));
-        else if (cat == static_cast<NdbTag::Category>(NdbTag::META | NdbTag::RESERVED)) subTags.push_back(std::make_shared<ReservedNdbTag>(am, tagStr, std::vector<std::shared_ptr<NdbTag>>(), aliases));
+        if (cat == NdbTag::COPYRIGHT) topLevel.push_back(std::make_shared<CopywrongTag>(am, tagStr, std::vector<std::shared_ptr<NdbTag>>(), aliases));
+        else if (cat == NdbTag::AUTHOR) topLevel.push_back(std::make_shared<AuthorTag>(am, tagStr, std::vector<std::shared_ptr<NdbTag>>(), aliases));
+        else if (cat == NdbTag::CHARACTER) topLevel.push_back(std::make_shared<CharTag>(am, tagStr, std::vector<std::shared_ptr<NdbTag>>(), aliases));
+        else if (cat == NdbTag::SPECIES) topLevel.push_back(std::make_shared<SpeciesTag>(am, tagStr, std::vector<std::shared_ptr<NdbTag>>(), aliases));
+        else if (cat == NdbTag::GENERAL) topLevel.push_back(std::make_shared<GeneralTag>(am, tagStr, std::vector<std::shared_ptr<NdbTag>>(), aliases));
+        else if (cat == NdbTag::META) topLevel.push_back(std::make_shared<MetaTag>(am, tagStr, std::vector<std::shared_ptr<NdbTag>>(), aliases));
+        else if (cat == NdbTag::LORE) topLevel.push_back(std::make_shared<LoreTag>(am, tagStr, std::vector<std::shared_ptr<NdbTag>>(), aliases));
+        else if (cat == static_cast<NdbTag::Category>(NdbTag::META | NdbTag::RESERVED)) topLevel.push_back(std::make_shared<ReservedNdbTag>(am, tagStr, std::vector<std::shared_ptr<NdbTag>>(), aliases));
     }
-    topLevel = connectHierarchy(topLevel, subTags, lossChunks);
+    for (u64 i = 0; i < lossChunks.size(); i++)
+    {
+        for (u64 j = 0; j < lossChunks[i].second.size(); j++)
+        {
+            operator[](lossChunks[i].first)->addChild(operator[](lossChunks[i].second[j]));
+        }
+    }
+    //        topLevel = connectHierarchy(topLevel, subTags, lossChunks);
 }
 
 std::vector<std::shared_ptr<NdbTag>> NdbTagWeb::connectHierarchy(std::vector<std::shared_ptr<NdbTag>> topLevel, std::vector<std::shared_ptr<NdbTag>> subTags, std::vector<std::pair<std::string, std::vector<std::string>>> lossChunks)
@@ -452,16 +471,19 @@ void NdbTagWeb::setFilename(std::string filename)
 
 std::shared_ptr<NdbTag>& NdbTagWeb::operator[](u64 idx)
 {
+    cleanTopLevel();
     return topLevel[idx];
 }
 
 u64 NdbTagWeb::getTopLevelTagCount()
 {
+    cleanTopLevel();
     return topLevel.size();
 }
 
 bool NdbTagWeb::containsTopLevelTag(std::string tlts)
 {
+    cleanTopLevel();
     for (u64 i = 0; i < topLevel.size(); i++)
     {
         if (topLevel[i]->getTagString() == tlts) return true;
@@ -471,6 +493,7 @@ bool NdbTagWeb::containsTopLevelTag(std::string tlts)
 
 bool NdbTagWeb::containsTagHierarchy(std::string ts)
 {
+    cleanTopLevel();
     if (containsTopLevelTag(ts)) return true;
     for (u64 i = 0; i < topLevel.size(); i++)
     {
@@ -481,6 +504,7 @@ bool NdbTagWeb::containsTagHierarchy(std::string ts)
 
 bool NdbTagWeb::addTopLevelTag(std::shared_ptr<NdbTag> tlt, u64 idx)
 {
+    cleanTopLevel();
     if (containsTagHierarchy(tlt->getTagString())) return false;
     if (idx == std::numeric_limits<u64>::max())
     {
@@ -496,6 +520,7 @@ bool NdbTagWeb::addTopLevelTag(std::shared_ptr<NdbTag> tlt, u64 idx)
 
 bool NdbTagWeb::removeTopLevelTag(u64 idx)
 {
+    cleanTopLevel();
     if (idx >= topLevel.size()) return false;
     topLevel.erase(topLevel.begin() + idx);
     return true;
@@ -503,6 +528,7 @@ bool NdbTagWeb::removeTopLevelTag(u64 idx)
 
 bool NdbTagWeb::setTopLevelTag(std::shared_ptr<NdbTag> tlt, u64 idx)
 {
+    cleanTopLevel();
     if (idx >= topLevel.size() || containsTopLevelTag(tlt->getTagString())) return false;
     removeTopLevelTag(idx);
     if (idx == topLevel.size()) idx = std::numeric_limits<u64>::max();
@@ -512,6 +538,7 @@ bool NdbTagWeb::setTopLevelTag(std::shared_ptr<NdbTag> tlt, u64 idx)
 
 void NdbTagWeb::writeOut()
 {
+    cleanTopLevel();
     std::vector<char> buf;
     buf = pushMagic(buf, 1, 0, 0);
     buf = pushU64(buf, static_cast<u64>(topLevel.size()));
@@ -546,6 +573,7 @@ void NdbTagWeb::writeOut()
 
 std::vector<char> NdbTagWeb::getBuf()
 {
+    cleanTopLevel();
     std::vector<char> buf;
     buf = pushMagic(buf, 1, 0, 0);
     buf = pushU64(buf, static_cast<u64>(topLevel.size()));
@@ -677,6 +705,7 @@ std::set<std::string> NdbTagWeb::findFromWildcard(std::string wildcard)
 
 std::set<std::string> NdbTagWeb::_findFromWildcard(std::string wildcard, std::vector<std::shared_ptr<NdbTag>> web)
 {
+    cleanTopLevel();
     if (web.size() == 0) return std::set<std::string>();
     std::set<std::string> matches;
     std::vector<std::shared_ptr<NdbTag>> sublevel;
@@ -723,6 +752,7 @@ std::string NdbTagWeb::findFromAlias(std::string alias)
 
 std::string NdbTagWeb::_findFromAlias(std::string alias, std::vector<std::shared_ptr<NdbTag>> web)
 {
+    cleanTopLevel();
     if (web.size() == 0 || alreadyFound) return "";
     std::vector<std::shared_ptr<NdbTag>> sublevel;
     std::string str;
@@ -730,7 +760,7 @@ std::string NdbTagWeb::_findFromAlias(std::string alias, std::vector<std::shared
     {
         for (u64 j = 0; j < web[i]->getAliases().size(); j++)
         {
-            if (alias == web[i]->getAliases()[j])
+            if (alias == web[i]->getAliases()[j] || alias == web[i]->getTagString())
             {
                 alreadyFound = true;
                 return web[i]->getTagString();
@@ -744,8 +774,48 @@ std::string NdbTagWeb::_findFromAlias(std::string alias, std::vector<std::shared
     return str + _findFromAlias(alias, sublevel);
 }
 
+std::shared_ptr<NdbTag> NdbTagWeb::operator[](std::string str)
+{
+    alreadyFound = false;
+    std::shared_ptr<NdbTag> nt = _getFromString(str, topLevel);
+    alreadyFound = false;
+    found = nullptr;
+    return nt;
+}
+
+std::shared_ptr<NdbTag> NdbTagWeb::_getFromString(std::string str, std::vector<std::shared_ptr<NdbTag>> web)
+{
+    cleanTopLevel();
+    if (web.size() == 0 || alreadyFound) return found;
+    std::vector<std::shared_ptr<NdbTag>> sublevel;
+    for (u64 i = 0; i < web.size(); i++)
+    {
+        if (str == web[i]->getTagString())
+        {
+            alreadyFound = true;
+            found = web[i];
+            return found;
+        }
+        for (u64 j = 0; j < web[i]->getAliases().size(); j++)
+        {
+            if (str == web[i]->getAliases()[j])
+            {
+                alreadyFound = true;
+                found = web[i];
+                return found;
+            }
+        }
+        for (u64 j = 0; j < web[i]->getChildCount(); j++)
+        {
+            sublevel.push_back(web[i]->getChild(j));
+        }
+    }
+    return _getFromString(str, sublevel);
+}
+
 std::vector<char> NdbTagWeb::pushHierarchy(std::vector<char> buf, std::vector<std::shared_ptr<NdbTag>> subTags)
 {
+    cleanTopLevel();
     if (subTags.size() == 0) return buf;
     std::vector<std::shared_ptr<NdbTag>> childTags;
     for (u64 i = 0; i < subTags.size(); i++)
@@ -849,7 +919,7 @@ std::vector<char> NdbTagWeb::pushStringArray(std::vector<char> buf, std::vector<
 {
     for (u64 i = 0; i < strArr.size(); i++)
     {
-        for (int j = 0; j < strArr.size(); j++)
+        for (int j = 0; j < strArr[i].size(); j++)
         {
             buf.push_back(strArr[i][j]);
         }
@@ -860,6 +930,18 @@ std::vector<char> NdbTagWeb::pushStringArray(std::vector<char> buf, std::vector<
         buf.push_back(0);
     }
     return buf;
+}
+
+void NdbTagWeb::cleanTopLevel()
+{
+    for (u64 i = 0; i < topLevel.size(); i++)
+    {
+        if (topLevel[i]->getParentCount() != 0)
+        {
+            topLevel.erase(topLevel.begin() + i);
+            i--;
+        }
+    }
 }
 
 } // namespace Bidoof

@@ -11,7 +11,7 @@
 
 namespace tmc::Bidoof {
 
-class TMCNDBTAGGING_EXPORT NdbTag
+class TMCNDBTAGGING_EXPORT NdbTag : public std::enable_shared_from_this<NdbTag>
 {
 public:
     enum AxceModYum : u8 {
@@ -48,14 +48,14 @@ public:
     void setTagString(std::string tag);
     AxceModYum getAccessModifier();
     void setAccessModifier(AxceModYum am);
-    std::shared_ptr<NdbTag> getParent(u64 idx);
+    std::shared_ptr<NdbTag>& getParent(u64 idx);
     bool addParent(std::shared_ptr<NdbTag> nt, u64 idx = std::numeric_limits<u64>::max());
     bool removeParent(u64 idx);
     bool setParent(u64 idx, std::shared_ptr<NdbTag> nt);
     u64 getParentCount();
     bool containsParent(std::string tag);
     bool containsParentRecursive(std::string tag);
-    std::shared_ptr<NdbTag> getChild(u64 idx);
+    std::shared_ptr<NdbTag>& getChild(u64 idx);
     bool addChild(std::shared_ptr<NdbTag> nt, u64 idx = std::numeric_limits<u64>::max());
     bool removeChild(u64 idx);
     bool setChild(u64 idx, std::shared_ptr<NdbTag> nt);
@@ -72,6 +72,7 @@ public:
 protected:
     std::string tag;
     AxceModYum am;
+    std::shared_ptr<NdbTag> failVal;
     bool _addChildPriv(std::shared_ptr<NdbTag> nt, u64 idx = std::numeric_limits<u64>::max());
     void _removeChildPriv(u64 idx);
     bool _addParentPriv(std::shared_ptr<NdbTag> nt, u64 idx = std::numeric_limits<u64>::max());

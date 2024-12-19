@@ -25,6 +25,7 @@ public:
     NdbTagWeb(std::vector<char> buf);
     std::string getFilename();
     std::shared_ptr<NdbTag>& operator[](u64 idx);
+    std::shared_ptr<NdbTag> operator[](std::string str);
     u64 getTopLevelTagCount();
     bool addTopLevelTag(std::shared_ptr<NdbTag> tlt, u64 idx = std::numeric_limits<u64>::max());
     bool containsTopLevelTag(std::string tlts);
@@ -42,7 +43,9 @@ private:
     std::vector<std::shared_ptr<NdbTag>> topLevel;
     std::string filename;
     u64 byteVecToU64(std::vector<char> bVec);
-    std::vector<std::shared_ptr<NdbTag>> connectHierarchy(std::vector<std::shared_ptr<NdbTag>> topLevel, std::vector<std::shared_ptr<NdbTag>> subTags, std::vector<std::pair<std::string, std::vector<std::string>>> lossChunks);
+    std::vector<std::shared_ptr<NdbTag>> connectHierarchy(std::vector<std::shared_ptr<NdbTag>> topLevel,
+                                                          std::vector<std::shared_ptr<NdbTag>> subTags, std::vector<std::pair<std::string, std::vector<std::string>>> lossChunks);
+    void cleanTopLevel();
     std::vector<char> pushMagic(std::vector<char> buf, u8 vMaj, u8 vMin, u8 vPch);
     std::vector<char> pushU64(std::vector<char> buf, u64 qWord);
     std::vector<char> pushMeta(std::vector<char> buf, NdbTag::AxceModYum am, NdbTag::Category cat);
@@ -50,8 +53,10 @@ private:
     std::vector<char> pushStringArray(std::vector<char> buf, std::vector<std::string> strArr);
     std::vector<char> pushHierarchy(std::vector<char> buf, std::vector<std::shared_ptr<NdbTag>> subTags);
     std::string _findFromAlias(std::string alias, std::vector<std::shared_ptr<NdbTag>> web);
+    std::shared_ptr<NdbTag> _getFromString(std::string str, std::vector<std::shared_ptr<NdbTag>> web);
     std::set<std::string> _findFromWildcard(std::string wildcard, std::vector<std::shared_ptr<NdbTag>> web);
     std::set<std::string> appendSet(std::set<std::string> s1, std::set<std::string> s2);
+    std::shared_ptr<NdbTag> found;
     bool alreadyFound;
     std::vector<std::string> alreadyPushed;
 
