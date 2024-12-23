@@ -441,21 +441,12 @@ std::vector<std::shared_ptr<NdbTag>> NdbTagWeb::connectHierarchy(std::vector<std
 
 u64 NdbTagWeb::byteVecToU64(std::vector<char> bVec)
 {
-    u64 ret = bVec[0];
-    ret <<= 8;
-    ret |= bVec[1];
-    ret <<= 8;
-    ret |= bVec[2];
-    ret <<= 8;
-    ret |= bVec[3];
-    ret <<= 8;
-    ret |= bVec[4];
-    ret <<= 8;
-    ret |= bVec[5];
-    ret <<= 8;
-    ret |= bVec[6];
-    ret <<= 8;
-    ret |= bVec[7];
+    u64 ret = static_cast<u8>(bVec[0]);
+    for (u8 i = 1; i < 8; i++)
+    {
+        ret <<= 8;
+        ret |= static_cast<u8>(bVec[i]);
+    }
     return ret;
 }
 
