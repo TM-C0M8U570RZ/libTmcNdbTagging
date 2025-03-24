@@ -235,7 +235,7 @@ NdbTagWeb::NdbTagWeb(std::vector<char> buf)
         u64 oofset = offset + 8;
         for (u64 i = offset; i < oofset; i++)
         {
-            temp[i - offset] = buf[offset];
+            temp[i - offset] = buf[i];
         }
         offset += 8;
         u64 aliasCount = byteVecToU64(temp);
@@ -258,9 +258,10 @@ NdbTagWeb::NdbTagWeb(std::vector<char> buf)
         oofset = offset + 8;
         for (u64 i = offset; i < oofset; i++)
         {
-            temp[i - offset] = buf[offset];
+            temp[i - offset] = buf[i];
         }
         u64 childCount = byteVecToU64(temp);
+        offset += 8;
         while (knuts.second.size() < childCount)
         {
             std::string child;
@@ -277,6 +278,7 @@ NdbTagWeb::NdbTagWeb(std::vector<char> buf)
         {
             offset++;
         }
+        offset += 8;
         if (cat == NdbTag::COPYRIGHT) topLevel.push_back(std::make_shared<CopywrongTag>(am, tagStr, std::vector<std::shared_ptr<NdbTag>>(), aliases));
         else if (cat == NdbTag::AUTHOR) topLevel.push_back(std::make_shared<AuthorTag>(am, tagStr, std::vector<std::shared_ptr<NdbTag>>(), aliases));
         else if (cat == NdbTag::CHARACTER) topLevel.push_back(std::make_shared<CharTag>(am, tagStr, std::vector<std::shared_ptr<NdbTag>>(), aliases));
@@ -310,7 +312,7 @@ NdbTagWeb::NdbTagWeb(std::vector<char> buf)
         u64 oofset = offset + 8;
         for (u64 i = offset; i < oofset; i++)
         {
-            temp[i - offset] = buf[offset];
+            temp[i - offset] = buf[i];
         }
         offset += 8;
         u64 parentCount = byteVecToU64(temp);
@@ -333,7 +335,7 @@ NdbTagWeb::NdbTagWeb(std::vector<char> buf)
         oofset = offset + 8;
         for (u64 i = offset; i < oofset; i++)
         {
-            temp[i - offset] = buf[offset];
+            temp[i - offset] = buf[i];
         }
         offset += 8;
         u64 aliasCount = byteVecToU64(temp);
@@ -356,8 +358,9 @@ NdbTagWeb::NdbTagWeb(std::vector<char> buf)
         oofset = offset + 8;
         for (u64 i = offset; i < oofset; i++)
         {
-            temp[i - offset] = buf[offset];
+            temp[i - offset] = buf[i];
         }
+        offset += 8;
         u64 childCount = byteVecToU64(temp);
         while (knuts.second.size() < childCount)
         {
@@ -375,6 +378,7 @@ NdbTagWeb::NdbTagWeb(std::vector<char> buf)
         {
             offset++;
         }
+        offset += 8;
         if (cat == NdbTag::COPYRIGHT) topLevel.push_back(std::make_shared<CopywrongTag>(am, tagStr, std::vector<std::shared_ptr<NdbTag>>(), aliases));
         else if (cat == NdbTag::AUTHOR) topLevel.push_back(std::make_shared<AuthorTag>(am, tagStr, std::vector<std::shared_ptr<NdbTag>>(), aliases));
         else if (cat == NdbTag::CHARACTER) topLevel.push_back(std::make_shared<CharTag>(am, tagStr, std::vector<std::shared_ptr<NdbTag>>(), aliases));
